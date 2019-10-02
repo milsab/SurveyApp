@@ -6,6 +6,17 @@ const mongoose = require('mongoose');
 
 const User = mongoose.model('user');
 
+passport.serializeUser((user, done) => {
+    done(null, user.id);
+});
+
+passport.deserializeUser((id, done) =>{
+    User.findById(id)
+        .then(user => {
+            done(null, user);
+        });
+});
+
 passport.use(new GoogleStrategy({
     clientID: keys.googleClientID,
     clientSecret: keys.googleClientSecret,
@@ -16,9 +27,13 @@ passport.use(new GoogleStrategy({
         .then((existingUser) =>{
             if(existingUser){
                 // the user already exists and we do not need to creat the user again
+                // first argument of done is the error obj which is null here, the second arg is the user
+                done(null, existingUser);
             } else{
                 // we need to create the user
-                new User({googleId: profile.id}).save();
+                new User({googleId: profile.id})
+                .save()
+                .then(user => done(null, user));
             }
         })
     
